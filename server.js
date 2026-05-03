@@ -14,13 +14,15 @@ const PORT = process.env.PORT || 3000;
 
 // ── Database connection ──────────────────────────────────────
 const pool = new Pool({
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     process.env.DB_PORT     || 5432,
-  database: process.env.DB_NAME     || 'exam_db',
-  user:     process.env.DB_USER     || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
-
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌  DB connection failed:', err.message);
