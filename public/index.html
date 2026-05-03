@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam & Result System — Thapar Institute</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0a0e1a;--navy2:#0f1628;--navy3:#141c35;--navy4:#1a2340;
+  --gold:#d4a843;--gold2:#e8c46a;--gold3:#f0d080;
+  --teal:#2dd4bf;--teal2:#5eead4;
+  --coral:#f87171;--green:#4ade80;
+  --indigo:#818cf8;--orange:#f97316;
+  --text:#e8eaf2;--text2:#a8b0c8;--text3:#6070a0;
+  --border:rgba(212,168,67,0.2);--border2:rgba(255,255,255,0.07);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--navy3) 50%,var(--navy) 100%);padding:3rem 2rem 2rem;text-align:center;position:relative;border-bottom:1px solid var(--border)}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(212,168,67,0.08),transparent);pointer-events:none}
+.institute-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,168,67,0.1);border:1px solid var(--border);border-radius:100px;padding:6px 18px;font-size:12px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:1.5rem}
+.dot-pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.hero h1{font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:700;line-height:1.2;margin-bottom:0.5rem;background:linear-gradient(135deg,var(--gold3),var(--gold),#c8902a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{color:var(--text2);font-size:0.95rem;margin-bottom:2rem}
+.meta-row{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;font-size:12px;color:var(--text3)}
+.meta-row span strong{color:var(--text2)}
+.db-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:500;margin-top:1rem}
+.db-status.connected{background:rgba(74,222,128,0.1);color:var(--green);border:1px solid rgba(74,222,128,0.25)}
+.db-status.error{background:rgba(248,113,113,0.1);color:var(--coral);border:1px solid rgba(248,113,113,0.25)}
+
+/* ── NAV ── */
+.nav{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--border2);padding:0 1.5rem;background:var(--navy2);scrollbar-width:none;position:sticky;top:0;z-index:100}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{padding:0.9rem 1.3rem;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.nav-btn.active,.nav-btn:hover{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* ── LAYOUT ── */
+.content{padding:1.5rem;max-width:1100px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.5rem}
+.kpi{background:var(--navy3);border:1px solid var(--border2);border-radius:12px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;transition:all 0.2s;cursor:default}
+.kpi:hover{border-color:var(--border);transform:translateY(-1px)}
+.kpi::after{content:'';position:absolute;top:0;right:0;width:70px;height:70px;border-radius:0 12px 0 70px;opacity:0.06}
+.kpi.gold::after{background:var(--gold)}.kpi.teal::after{background:var(--teal)}
+.kpi.coral::after{background:var(--coral)}.kpi.green::after{background:var(--green)}
+.kpi.indigo::after{background:var(--indigo)}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.kpi-val{font-size:2rem;font-weight:600;font-family:'DM Mono',monospace;line-height:1}
+.kpi.gold .kpi-val{color:var(--gold)}.kpi.teal .kpi-val{color:var(--teal)}
+.kpi.coral .kpi-val{color:var(--coral)}.kpi.green .kpi-val{color:var(--green)}
+.kpi.indigo .kpi-val{color:var(--indigo)}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ── CARDS ── */
+.card{background:var(--navy3);border:1px solid var(--border2);border-radius:12px;padding:1.3rem;margin-bottom:1.2rem}
+.card-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:block;width:3px;height:16px;background:var(--gold);border-radius:2px}
+
+/* ── CHARTS ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.2rem}
+.chart-wrap{position:relative;width:100%}
+@media(max-width:640px){.chart-row{grid-template-columns:1fr}.hero h1{font-size:1.7rem}}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;align-items:center}
+select,input[type=text]{background:var(--navy4);border:1px solid var(--border2);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;transition:border-color 0.2s}
+select:hover,input[type=text]:hover,select:focus,input[type=text]:focus{border-color:var(--gold)}
+input[type=text]{flex:1;min-width:180px}
+.btn{background:rgba(212,168,67,0.1);border:1px solid var(--border);color:var(--gold);padding:8px 16px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s}
+.btn:hover{background:rgba(212,168,67,0.2)}
+
+/* ── TABLES ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:var(--text3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border2)}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text2)}
+tr:hover td{background:rgba(255,255,255,0.02);color:var(--text)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500}
+.badge-pass{background:rgba(74,222,128,0.12);color:var(--green);border:1px solid rgba(74,222,128,0.25)}
+.badge-fail{background:rgba(248,113,113,0.12);color:var(--coral);border:1px solid rgba(248,113,113,0.25)}
+.grade-chip{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(212,168,67,0.15);color:var(--gold)}
+
+/* ── STUDENT CARDS ── */
+.student-result{background:var(--navy3);border:1px solid var(--border2);border-radius:12px;padding:1.2rem;margin-bottom:10px;transition:border-color 0.2s}
+.student-result:hover{border-color:rgba(212,168,67,0.3)}
+.sr-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.sr-name{font-weight:500;font-size:15px}
+.sr-dept{font-size:12px;color:var(--text3);margin-top:2px}
+.sr-subjects{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;margin-top:10px}
+.sub-chip{background:var(--navy4);border:1px solid var(--border2);border-radius:8px;padding:7px 10px;font-size:12px}
+.sub-name{color:var(--text2);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-marks{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.sgpa-bar{width:100%;height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin:6px 0}
+.sgpa-fill{height:100%;border-radius:3px;transition:width 0.8s ease}
+
+/* ── DEPT GRID ── */
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:1.2rem}
+.dept-card{background:var(--navy4);border:1px solid var(--border2);border-radius:12px;padding:1.1rem;cursor:pointer;transition:all 0.2s}
+.dept-card:hover,.dept-card.sel{border-color:var(--gold);background:rgba(212,168,67,0.04)}
+.dept-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+
+/* ── TOPPERS ── */
+.topper-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.topper-rank{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;color:var(--gold);min-width:30px}
+.topper-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.topper-info{flex:1}
+.topper-name{font-size:14px;font-weight:500}
+.topper-dept{font-size:11px;color:var(--text3)}
+.topper-sgpa{font-family:'DM Mono',monospace;font-size:16px;color:var(--gold)}
+
+/* ── BACKLOG ── */
+.backlog-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px}
+.bl-sub{color:var(--text3);font-size:12px;margin-top:2px}
+.bl-marks{font-family:'DM Mono',monospace;color:var(--coral)}
+
+/* ── SCHEMA ── */
+.schema-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.schema-table{background:var(--navy4);border:1px solid var(--border2);border-radius:12px;padding:1rem;overflow:hidden}
+.schema-tname{font-weight:600;font-size:13px;font-family:'DM Mono',monospace;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border2)}
+.schema-col{font-size:11px;color:var(--text3);padding:2px 0;display:flex;gap:6px}
+.schema-col-name{color:var(--text2)}
+.schema-col-type{color:var(--text3);font-family:'DM Mono',monospace;font-size:10px}
+.proc-chip{display:inline-block;background:rgba(212,168,67,0.1);border:1px solid rgba(212,168,67,0.2);border-radius:6px;padding:3px 10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--gold2);margin:3px}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:3rem;color:var(--text3);gap:10px}
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="institute-badge"><span class="dot-pulse"></span>Thapar Institute of Engineering &amp; Technology</div>
+  <h1>Examination &amp; Result Processing</h1>
+  <p class="hero-sub">University Management System — UCS310 DBMS Project &nbsp;|&nbsp; Sem 4, Jan–June 2026</p>
+  <div class="meta-row">
+    <span>Group <strong>2C72</strong></span>
+    <span>Batch <strong>2C72</strong></span>
+    <span>Submitted to <strong>Ms. Gayatri Saxena</strong></span>
+    <span><strong>Jayant Kaushik (1024031016)</strong> &amp; <strong>Pihu (1024031014)</strong></span>
+  </div>
+  <div id="dbStatus" class="db-status">Connecting to database…</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" data-section="overview">Overview</button>
+  <button class="nav-btn" data-section="students">Student Results</button>
+  <button class="nav-btn" data-section="departments">Departments</button>
+  <button class="nav-btn" data-section="toppers">Toppers</button>
+  <button class="nav-btn" data-section="backlogs">Backlogs</button>
+  <button class="nav-btn" data-section="analytics">Analytics</button>
+  <button class="nav-btn" data-section="schema">DB Schema</button>
+</nav>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- OVERVIEW -->
+  <div id="overview" class="section active">
+    <div class="kpi-grid">
+      <div class="kpi gold"><div class="kpi-label">Total Students</div><div class="kpi-val" id="kpi-students">—</div><div class="kpi-sub" id="kpi-students-sub">Loading…</div></div>
+      <div class="kpi green"><div class="kpi-label">Pass Rate</div><div class="kpi-val" id="kpi-pass">—</div><div class="kpi-sub" id="kpi-pass-sub">Loading…</div></div>
+      <div class="kpi coral"><div class="kpi-label">Backlogs</div><div class="kpi-val" id="kpi-fail">—</div><div class="kpi-sub">Students who failed</div></div>
+      <div class="kpi teal"><div class="kpi-label">Subjects</div><div class="kpi-val" id="kpi-subjects">—</div><div class="kpi-sub">Tracked across semesters</div></div>
+      <div class="kpi indigo"><div class="kpi-label">Exams</div><div class="kpi-val" id="kpi-exams">—</div><div class="kpi-sub">Scheduled this semester</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">Pass vs Fail — by Department</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="deptChart" role="img" aria-label="Pass fail by department"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Grade Distribution</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="gradeChart" role="img" aria-label="Grade distribution donut"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">SGPA Distribution — All Students</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="sgpaChart" role="img" aria-label="SGPA distribution"></canvas></div>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div id="students" class="section">
+    <div class="filters">
+      <select id="deptFilter">
+        <option value="">All Departments</option>
+        <option>COE</option><option>ECE</option><option>ME</option><option>CIVIL</option>
+      </select>
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="PASS">PASS</option>
+        <option value="FAIL">FAIL</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="Search student name…">
+      <button class="btn" id="searchBtn">Search</button>
+    </div>
+    <div id="studentList"><div class="loading"><div class="spinner"></div>Loading students…</div></div>
+  </div>
+
+  <!-- DEPARTMENTS -->
+  <div id="departments" class="section">
+    <div class="dept-grid" id="deptGrid"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+    <div id="deptDetail"></div>
+  </div>
+
+  <!-- TOPPERS -->
+  <div id="toppers" class="section">
+    <div class="card">
+      <div class="card-title">Department Toppers (Highest SGPA per dept/semester)</div>
+      <div id="topperList"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">Overall Top 10 by SGPA</div>
+      <div id="top10List"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- BACKLOGS -->
+  <div id="backlogs" class="section">
+    <div class="kpi-grid">
+      <div class="kpi coral"><div class="kpi-label">Failed Students</div><div class="kpi-val" id="kpi-failcount">—</div></div>
+      <div class="kpi coral"><div class="kpi-label">F Grade Entries</div><div class="kpi-val" id="kpi-fgrades">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Backlog Detail — Subjects with F Grade (&lt;40%)</div>
+      <div id="backlogDetail"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="analytics" class="section">
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">Avg Marks by Department</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="avgChart" role="img" aria-label="Average marks by department"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Internal vs External Marks</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="intExtChart" role="img" aria-label="Internal vs external scatter"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Subject-wise Average Performance</div>
+      <div class="chart-wrap" style="height:340px"><canvas id="subjectChart" role="img" aria-label="Subject wise averages"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SCHEMA -->
+  <div id="schema" class="section">
+    <div class="card">
+      <div class="card-title">Live Database Schema — PostgreSQL Information Schema</div>
+      <div id="schemaContent"><div class="loading"><div class="spinner"></div>Fetching schema from DB…</div></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">Triggers &amp; Stored Procedures</div>
+      <div style="line-height:2">
+        <span class="proc-chip">trg_validate_marks</span>
+        <span class="proc-chip">trg_total</span>
+        <span class="proc-chip">trg_update_sgpa</span>
+        <span class="proc-chip">validate_marks()</span>
+        <span class="proc-chip">calculate_total()</span>
+        <span class="proc-chip">update_sgpa_trigger()</span>
+        <span class="proc-chip">GetGrade(INT,INT)</span>
+        <span class="proc-chip">GetGradePoint(INT,INT)</span>
+        <span class="proc-chip">CalculateSGPA(INT,INT)</span>
+        <span class="proc-chip">UpdateCGPA(INT)</span>
+        <span class="proc-chip">ProcessResult(INT,INT)</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const API = ''; // same origin — server serves this file
+
+// ── colours ─────────────────────────────────────────────────
+const deptColors  = { COE:'#d4a843', ECE:'#2dd4bf', ME:'#818cf8', CIVIL:'#f87171' };
+const deptIcons   = { COE:'💻', ECE:'📡', ME:'⚙️', CIVIL:'🏗️' };
+const avatarPool  = ['#3b5bdb','#1a9e6e','#c44d1a','#8b35d6','#c87a12','#1a6ea0','#b23a6a','#2a7a3a'];
+const gridColor   = 'rgba(255,255,255,0.06)';
+const tickColor   = '#6070a0';
+
+// ── helpers ──────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const el = (tag, attrs={}, ...children) => {
+  const e = document.createElement(tag);
+  Object.entries(attrs).forEach(([k,v]) => k==='class'?e.className=v:k==='html'?e.innerHTML=v:e.setAttribute(k,v));
+  children.forEach(c => typeof c==='string' ? e.insertAdjacentHTML('beforeend',c) : c&&e.appendChild(c));
+  return e;
+};
+function initials(name){ return name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(); }
+function sgpaColor(s){ if(s>=9)return'#4ade80';if(s>=8)return'#2dd4bf';if(s>=7)return'#818cf8';if(s>=6)return'#d4a843';if(s>0)return'#f97316';return'#f87171'; }
+function avatarColor(id){ return avatarPool[id % avatarPool.length]; }
+
+// ── fetch wrapper ────────────────────────────────────────────
+async function api(path){
+  const r = await fetch(API + path);
+  if(!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+  return r.json();
+}
+
+// ── chart registry (destroy before redraw) ───────────────────
+const charts = {};
+function makeChart(id, config){
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id), config);
+  return charts[id];
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+const sectionLoaded = {};
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    const sec = btn.dataset.section;
+    $(sec).classList.add('active');
+    if(!sectionLoaded[sec]){ loadSection(sec); sectionLoaded[sec]=true; }
+  });
+});
+
+function loadSection(sec){
+  switch(sec){
+    case 'students':    loadStudents();    break;
+    case 'departments': loadDepartments(); break;
+    case 'toppers':     loadToppers();     break;
+    case 'backlogs':    loadBacklogs();    break;
+    case 'analytics':   loadAnalytics();   break;
+    case 'schema':      loadSchema();      break;
+  }
+}
+
+// ============================================================
+//  OVERVIEW — KPIs + Charts
+// ============================================================
+async function loadOverview(){
+  try {
+    const kpi = await api('/api/kpi');
+    $('kpi-students').textContent = kpi.totalStudents;
+    $('kpi-students-sub').textContent = 'Across 4 departments';
+    const pct = Math.round(kpi.passCount / kpi.totalStudents * 100);
+    $('kpi-pass').textContent = pct + '%';
+    $('kpi-pass-sub').textContent = `${kpi.passCount} of ${kpi.totalStudents} passed`;
+    $('kpi-fail').textContent = kpi.failCount;
+    $('kpi-subjects').textContent = kpi.subjectCount;
+    $('kpi-exams').textContent = kpi.examCount;
+
+    $('dbStatus').className = 'db-status connected';
+    $('dbStatus').innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>  PostgreSQL Connected';
+
+    await Promise.all([drawDeptChart(), drawGradeChart(), drawSgpaChart()]);
+  } catch(e){
+    $('dbStatus').className = 'db-status error';
+    $('dbStatus').textContent = '⚠ DB Error: ' + e.message;
+  }
+}
+
+async function drawDeptChart(){
+  const data = await api('/api/analytics/dept-pass');
+  const labels = data.map(d=>d.dept);
+  const passed = data.map(d=>parseInt(d.passed));
+  const failed = data.map(d=>parseInt(d.failed));
+  makeChart('deptChart',{
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'Pass',data:passed,backgroundColor:'rgba(74,222,128,0.7)',borderRadius:5,borderWidth:0},
+      {label:'Fail',data:failed,backgroundColor:'rgba(248,113,113,0.7)',borderRadius:5,borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tickColor},grid:{color:gridColor}},y:{ticks:{color:tickColor,stepSize:1},grid:{color:gridColor},min:0}}}
+  });
+}
+
+async function drawGradeChart(){
+  const data = await api('/api/analytics/grades');
+  const gradeColorMap = {'O':'#f0d080','A+':'#2dd4bf','A':'#5eead4','B+':'#818cf8','B':'#a5b4fc','C':'#94a3b8','D':'#d4a843','F':'#f87171'};
+  makeChart('gradeChart',{
+    type:'doughnut',
+    data:{ labels:data.map(d=>d.grade), datasets:[{
+      data:data.map(d=>parseInt(d.cnt)),
+      backgroundColor:data.map(d=>gradeColorMap[d.grade]||'#555'),
+      borderWidth:0, hoverOffset:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{
+      display:true,position:'right',
+      labels:{color:tickColor,boxWidth:10,font:{size:11},padding:8}
+    }}}
+  });
+}
+
+async function drawSgpaChart(){
+  const data = await api('/api/analytics/sgpa-distribution');
+  const bgColors = ['#f87171','#f97316','#d4a843','#2dd4bf','#818cf8','#4ade80','#a3e635'];
+  makeChart('sgpaChart',{
+    type:'bar',
+    data:{ labels:data.map(d=>d.bucket), datasets:[{
+      label:'Students',
+      data:data.map(d=>parseInt(d.cnt)),
+      backgroundColor:bgColors.slice(0,data.length),
+      borderRadius:6,borderWidth:0
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:tickColor},grid:{color:gridColor}},y:{ticks:{color:tickColor,stepSize:1},grid:{color:gridColor},min:0}}}
+  });
+}
+
+// ============================================================
+//  STUDENTS
+// ============================================================
+async function loadStudents(){
+  renderStudents();
+  $('searchBtn').addEventListener('click', renderStudents);
+  $('searchInput').addEventListener('keyup', e=>{ if(e.key==='Enter') renderStudents(); });
+  $('deptFilter').addEventListener('change', renderStudents);
+  $('statusFilter').addEventListener('change', renderStudents);
+}
+
+async function renderStudents(){
+  $('studentList').innerHTML = '<div class="loading"><div class="spinner"></div>Fetching from DB…</div>';
+  try {
+    const params = new URLSearchParams();
+    const dept   = $('deptFilter').value;
+    const status = $('statusFilter').value;
+    const search = $('searchInput').value.trim();
+    if(dept)   params.set('dept',dept);
+    if(status) params.set('status',status);
+    if(search) params.set('search',search);
+    const students = await api('/api/students?' + params);
+    if(!students.length){ $('studentList').innerHTML='<div class="empty">No students match the filter.</div>'; return; }
+
+    // Fetch subjects for all students in parallel
+    const subjectMap = {};
+    await Promise.all(students.map(async s=>{
+      subjectMap[s.studentid] = await api(`/api/students/${s.studentid}/subjects`);
+    }));
+
+    $('studentList').innerHTML = '';
+    students.forEach(s=>{
+      const ac = avatarColor(s.studentid);
+      const subs = subjectMap[s.studentid]||[];
+      const card = document.createElement('div');
+      card.className = 'student-result';
+      card.innerHTML = `
+        <div class="sr-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="topper-avatar" style="background:${ac}22;color:${ac};width:40px;height:40px">${initials(s.name)}</div>
+            <div>
+              <div class="sr-name">${s.name}</div>
+              <div class="sr-dept">${s.dept} &nbsp;|&nbsp; Sem ${s.semester} &nbsp;|&nbsp; Year ${s.year}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <span class="badge badge-${s.status.toLowerCase()}">${s.status}</span>
+            <div style="font-family:'DM Mono',monospace;font-size:1.3rem;color:${sgpaColor(parseFloat(s.sgpa))};margin-top:4px">${parseFloat(s.sgpa).toFixed(2)}</div>
+            <div style="font-size:10px;color:var(--text3)">SGPA</div>
+          </div>
+        </div>
+        <div class="sgpa-bar"><div class="sgpa-fill" style="width:${Math.min(parseFloat(s.sgpa)*10,100)}%;background:${sgpaColor(parseFloat(s.sgpa))}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:8px">
+          <span>Percentage: <strong style="color:var(--text2)">${parseFloat(s.pct).toFixed(1)}%</strong></span>
+          <span>CGPA: <strong style="color:var(--text2)">${parseFloat(s.cgpa).toFixed(2)}</strong></span>
+        </div>
+        <div class="sr-subjects">${subs.map(sub=>`
+          <div class="sub-chip">
+            <div class="sub-name">${sub.subjectname}</div>
+            <div class="sub-marks">${sub.internal}+${sub.external}=<strong style="color:var(--text)">${sub.total}</strong>
+              <span class="grade-chip">${sub.grade}</span>
+            </div>
+          </div>`).join('')}
+        </div>
+      `;
+      $('studentList').appendChild(card);
+    });
+  } catch(e){ $('studentList').innerHTML=`<div class="empty">Error: ${e.message}</div>`; }
+}
+
+// ============================================================
+//  DEPARTMENTS
+// ============================================================
+async function loadDepartments(){
+  try {
+    const depts = await api('/api/departments');
+    $('deptGrid').innerHTML = '';
+    depts.forEach((d,i)=>{
+      const c = deptColors[d.dept]||'#888';
+      const card = document.createElement('div');
+      card.className = 'dept-card' + (i===0?' sel':'');
+      card.style.borderLeft = `3px solid ${c}`;
+      card.innerHTML = `
+        <div class="dept-icon" style="background:${c}22;color:${c}">${deptIcons[d.dept]||'🏫'}</div>
+        <div style="font-weight:500;font-size:14px;color:${c};margin-bottom:4px">${d.dept}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px">HOD: ${d.hod}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${d.totalstudents} students &nbsp;|&nbsp; Avg SGPA ${parseFloat(d.avgsgpa).toFixed(2)}</div>
+        <div style="font-size:2rem;font-weight:600;font-family:'DM Mono',monospace;color:var(--green)">
+          ${parseFloat(d.passpct).toFixed(0)}%
+        </div>
+        <div style="font-size:11px;color:var(--text3)">pass rate</div>
+      `;
+      card.addEventListener('click',()=>{
+        document.querySelectorAll('.dept-card').forEach(c=>c.classList.remove('sel'));
+        card.classList.add('sel');
+        loadDeptStudents(d.dept);
+      });
+      $('deptGrid').appendChild(card);
+    });
+    if(depts.length) loadDeptStudents(depts[0].dept);
+  } catch(e){ $('deptGrid').innerHTML=`<div class="empty">Error: ${e.message}</div>`; }
+}
+
+async function loadDeptStudents(dept){
+  $('deptDetail').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+  try {
+    const sts = await api(`/api/departments/${encodeURIComponent(dept)}/students`);
+    const c = deptColors[dept]||'#888';
+    $('deptDetail').innerHTML = `
+      <div class="card">
+        <div class="card-title" style="color:${c}">${dept} — Students</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Name</th><th>Year</th><th>Sem</th>
+              <th>SGPA</th><th>CGPA</th><th>Pct %</th><th>Status</th>
+            </tr></thead>
+            <tbody>${sts.map((s,i)=>`<tr>
+              <td style="font-family:'DM Mono',monospace;color:var(--text3)">${i+1}</td>
+              <td style="font-weight:500;color:var(--text)">${s.name}</td>
+              <td>${s.year}</td>
+              <td>${s.semester}</td>
+              <td style="font-family:'DM Mono',monospace;color:${sgpaColor(parseFloat(s.sgpa))}">${parseFloat(s.sgpa).toFixed(2)}</td>
+              <td style="font-family:'DM Mono',monospace">${parseFloat(s.cgpa).toFixed(2)}</td>
+              <td>${parseFloat(s.pct).toFixed(1)}%</td>
+              <td><span class="badge badge-${s.status.toLowerCase()}">${s.status}</span></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch(e){ $('deptDetail').innerHTML=`<div class="empty">Error: ${e.message}</div>`; }
+}
+
+// ============================================================
+//  TOPPERS
+// ============================================================
+async function loadToppers(){
+  try {
+    const [toppers, top10] = await Promise.all([
+      api('/api/toppers'),
+      api('/api/toppers/overall?limit=10')
+    ]);
+
+    $('topperList').innerHTML = toppers.map(t=>{
+      const c = deptColors[t.dept]||'#888';
+      return `<div class="topper-row">
+        <div class="topper-rank" style="min-width:60px;font-size:12px;color:${c}">${t.dept} S${t.semester}</div>
+        <div class="topper-avatar" style="background:${c}22;color:${c}">${initials(t.name)}</div>
+        <div class="topper-info">
+          <div class="topper-name">${t.name}</div>
+          <div class="topper-dept">${parseFloat(t.pct).toFixed(1)}%</div>
+        </div>
+        <div class="topper-sgpa" style="color:${c}">${parseFloat(t.sgpa).toFixed(2)}</div>
+      </div>`;
+    }).join('');
+
+    $('top10List').innerHTML = top10.map((s,i)=>{
+      const ac = avatarColor(s.studentid);
+      return `<div class="topper-row">
+        <div class="topper-rank" style="color:${i<3?'#d4a843':'var(--text3)'}">${i+1}</div>
+        <div class="topper-avatar" style="background:${ac}22;color:${ac}">${initials(s.name)}</div>
+        <div class="topper-info">
+          <div class="topper-name">${s.name} <span style="font-size:11px;color:var(--text3)">(${s.dept})</span></div>
+          <div class="topper-dept">Sem ${s.semester} &nbsp;|&nbsp; ${parseFloat(s.pct).toFixed(1)}%</div>
+        </div>
+        <div class="topper-sgpa" style="color:${sgpaColor(parseFloat(s.sgpa))}">${parseFloat(s.sgpa).toFixed(2)}</div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    $('topperList').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+    $('top10List').innerHTML  = '';
+  }
+}
+
+// ============================================================
+//  BACKLOGS
+// ============================================================
+async function loadBacklogs(){
+  try {
+    const data = await api('/api/backlogs');
+    const failed = new Set(data.map(d=>d.name)).size;
+    $('kpi-failcount').textContent = failed;
+    $('kpi-fgrades').textContent   = data.length;
+
+    $('backlogDetail').innerHTML = data.map(d=>`
+      <div class="backlog-item">
+        <div>
+          <div style="font-weight:500">${d.name} <span style="font-size:11px;color:var(--text3)">(${d.dept})</span></div>
+          <div class="bl-sub">${d.subjectname}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="bl-marks">${d.total}/100</div>
+          <div style="font-size:11px;color:var(--text3)">${d.internal} int + ${d.external} ext</div>
+        </div>
+      </div>`).join('') || '<div class="empty">No backlogs found.</div>';
+  } catch(e){ $('backlogDetail').innerHTML=`<div class="empty">Error: ${e.message}</div>`; }
+}
+
+// ============================================================
+//  ANALYTICS
+// ============================================================
+async function loadAnalytics(){
+  try {
+    const [deptPass, scatterData, subjectData] = await Promise.all([
+      api('/api/analytics/dept-pass'),
+      api('/api/analytics/internal-external'),
+      api('/api/analytics/subjects')
+    ]);
+
+    // Avg marks by dept
+    const deptAvgs = deptPass.map(d=>{
+      const sts = scatterData.filter(s=>s.dept===d.dept);
+      return sts.length ? Math.round(sts.reduce((a,s)=>a+parseFloat(s.total),0)/sts.length) : 0;
+    });
+    makeChart('avgChart',{
+      type:'bar',
+      data:{ labels:deptPass.map(d=>d.dept),
+        datasets:[{label:'Avg %',data:deptAvgs,
+          backgroundColor:deptPass.map(d=>deptColors[d.dept]||'#888'),borderRadius:6,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:tickColor},grid:{color:gridColor}},
+                y:{ticks:{color:tickColor},grid:{color:gridColor},min:0,max:100}}}
+    });
+
+    // Scatter: internal vs external
+    const deptList = [...new Set(scatterData.map(s=>s.dept))];
+    const deptDatasets = deptList.map(dept=>{
+      const pts = scatterData.filter(s=>s.dept===dept).map(s=>({x:s.internal,y:s.external}));
+      const c = deptColors[dept]||'#888';
+      return{label:dept,data:pts,backgroundColor:c+'88',borderColor:c,borderWidth:1,pointRadius:5,pointHoverRadius:7};
+    });
+    makeChart('intExtChart',{
+      type:'scatter',
+      data:{datasets:deptDatasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:tickColor,boxWidth:10,font:{size:11}}}},
+        scales:{
+          x:{title:{display:true,text:'Internal (max 30)',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor},min:0,max:35},
+          y:{title:{display:true,text:'External (max 70)',color:tickColor},ticks:{color:tickColor},grid:{color:gridColor},min:0,max:75}
+        }}
+    });
+
+    // Horizontal subject bars
+    makeChart('subjectChart',{
+      type:'bar',
+      data:{
+        labels:subjectData.map(s=>s.subjectname),
+        datasets:[
+          {label:'Avg Total',data:subjectData.map(s=>parseFloat(s.avgtotal).toFixed(1)),backgroundColor:'rgba(45,212,191,0.6)',borderRadius:3,borderWidth:0},
+          {label:'Highest',data:subjectData.map(s=>s.highest),backgroundColor:'rgba(212,168,67,0.3)',borderRadius:3,borderWidth:0},
+        ]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:tickColor,boxWidth:10,font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:tickColor},grid:{color:gridColor},min:0,max:100},
+          y:{ticks:{color:tickColor,font:{size:10}},grid:{color:gridColor}}
+        }}
+    });
+  } catch(e){ console.error('Analytics error:',e); }
+}
+
+// ============================================================
+//  SCHEMA
+// ============================================================
+async function loadSchema(){
+  try {
+    const schema = await api('/api/schema');
+    const tableColors = {
+      department:'#d4a843',course:'#2dd4bf',student:'#818cf8',subject:'#f97316',
+      faculty:'#e879f9',exam:'#60a5fa',marks:'#34d399',result:'#f87171'
+    };
+    const grid = document.createElement('div');
+    grid.className = 'schema-grid';
+    Object.entries(schema).forEach(([tname,cols])=>{
+      const c = tableColors[tname]||'#888';
+      const card = document.createElement('div');
+      card.className = 'schema-table';
+      card.style.borderTop = `3px solid ${c}`;
+      card.innerHTML = `
+        <div class="schema-tname" style="color:${c}">${tname}</div>
+        ${cols.map(col=>`<div class="schema-col">
+          <span class="schema-col-name">${col.column}</span>
+          <span class="schema-col-type">${col.type}${col.nullable?'':' NOT NULL'}</span>
+        </div>`).join('')}
+      `;
+      grid.appendChild(card);
+    });
+    $('schemaContent').innerHTML = '';
+    $('schemaContent').appendChild(grid);
+  } catch(e){ $('schemaContent').innerHTML=`<div class="empty">Error fetching schema: ${e.message}</div>`; }
+}
+
+// ============================================================
+//  BOOT
+// ============================================================
+loadOverview();
+sectionLoaded['overview'] = true;
+</script>
+</body>
+</html>
